@@ -1,0 +1,26 @@
+# Dependências do Node.js
+node_modules/
+
+# Variáveis de ambiente e credenciais secretas (NUNCA subir para o GitHub)
+.env
+.env.local
+.env.production
+
+# Banco de dados local SQLite e backups (preserva privacidade e LGPD)
+database/*.sqlite
+database/*.sqlite-journal
+database/*.db
+database/backups/*
+!database/.gitkeep
+!database/backups/.gitkeep
+
+# Uploads de imagens de teste local
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Arquivos de sistema operacional e logs
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.vscode/
