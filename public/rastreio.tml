@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acompanhar Pedido — Fanatics Imports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <div class="logo-badge">FI</div>
+        FANATICS <span>IMPORTS</span>
+      </a>
+      <a href="/" class="btn-nav">← Voltar à Loja</a>
+    </div>
+  </header>
+
+  <main class="page-section">
+    <div class="container tracking-box">
+      <div class="panel-box">
+        <h3>ACOMPANHAR MEU PEDIDO</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 18px;">
+          Por segurança, informe o <strong>código do pedido</strong> e o <strong>telefone utilizado na compra</strong>.
+        </p>
+
+        <form id="trackingForm">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="trackOrderCode">Código do Pedido *</label>
+              <input type="text" id="trackOrderCode" class="form-control" required placeholder="Ex: #FI-0001" style="text-transform: uppercase;" />
+            </div>
+            <div class="form-group">
+              <label for="trackPhone">Telefone da Compra *</label>
+              <input type="tel" id="trackPhone" class="form-control" required placeholder="Ex: (21) 99999-9999" />
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 6px;">
+            Consultar Situação do Pedido
+          </button>
+        </form>
+      </div>
+
+      <!-- Resultado do Rastreamento -->
+      <div id="trackingResult" class="panel-box" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+          <div>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">PEDIDO ENCONTRADO</span>
+            <h2 id="resOrderCode" style="color: var(--green-primary); font-size: 1.8rem;">#FI-0001</h2>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">CLIENTE</span>
+            <strong id="resCustomerName" style="display: block;">-</strong>
+          </div>
+        </div>
+
+        <div id="resOrderItems" style="background: var(--bg-secondary); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 0.88rem; margin-bottom: 20px;"></div>
+
+        <h4 style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 10px;">LINHA DO TEMPO DO PEDIDO:</h4>
+        <div class="status-timeline" id="statusTimeline"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toastNotification"></div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="border-top: none; padding-top: 0;">
+        <span>© 2026 Fanatics Imports (@Fanatics.imports_ofc)</span>
+        <strong>Desenvolvido por Maycon Silva</strong>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/tracking.js"></script>
+</body>
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerenciar Produtos — Painel Fanatics Imports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    .sizes-checkbox-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .size-check-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .size-check-item input {
+      accent-color: var(--green-primary);
+    }
+    .admin-table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    th, td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+    th {
+      color: var(--green-primary);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+    }
+    .table-thumb {
+      width: 52px;
+      height: 52px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: #0a0a0a;
+      border: 1px solid var(--border-color);
+    }
+    .status-pill {
+      padding: 3px 9px;
+      border-radius: 99px;
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+    .status-ok {
+      background: rgba(0, 230, 118, 0.15);
+      color: var(--green-primary);
+    }
+    .status-off {
+      background: rgba(255, 82, 82, 0.15);
+      color: var(--danger);
+    }
+    .action-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-sm {
+      padding: 6px 10px;
+      border-radius: 5px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .btn-edit {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+    .btn-edit:hover {
+      border-color: var(--green-primary);
+      color: var(--green-primary);
+    }
+    .btn-del {
+      background: rgba(255, 82, 82, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(255, 82, 82, 0.3);
+    }
+    .btn-del:hover {
+      background: var(--danger);
+      color: #fff;
+    }
+    @media (max-width: 1024px) {
+      .admin-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <div class="logo-badge">FI</div>
+        FANATICS <span>ADMIN</span>
+      </a>
+      <div class="header-actions">
+        <a href="/" target="_blank" class="btn-nav">Ver Loja Online ↗</a>
+        <button type="button" id="logoutBtn" class="btn-nav" style="display: none; border-color: var(--danger); color: var(--danger);">
+          Sair
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tela de Login Administrativo -->
+  <main class="page-section" id="loginSection">
+    <div class="container" style="max-width: 440px;">
+      <div class="panel-box">
+        <h3>ACESSO ADMINISTRATIVO</h3>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 18px;">
+          Entre com suas credenciais definidas no arquivo <code>.env</code> para gerenciar o catálogo da Fanatics Imports.
+        </p>
+        <form id="adminLoginForm">
+          <div class="form-group">
+            <label for="loginUser">Usuário Administrativo</label>
+            <input type="text" id="loginUser" class="form-control" required placeholder="admin" />
+          </div>
+          <div class="form-group">
+            <label for="loginPass">Senha</label>
+            <input type="password" id="loginPass" class="form-control" required placeholder="••••••••" />
+          </div>
+          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 8px;">
+            Entrar no Gerenciador
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Área Protegida de Gestão de Produtos -->
+  <main class="page-section" id="managerSection" style="display: none;">
+    <div class="container">
+      <div class="section-header">
+        <h2>CATÁLOGO & <span>PRODUTOS</span></h2>
+        <span class="products-count" id="adminProductsSummary">Carregando...</span>
+      </div>
+
+      <div class="admin-grid">
+        <!-- Formulário de Cadastro / Edição -->
+        <div class="panel-box">
+          <h3 id="formTitle">CADASTRAR NOVO PRODUTO</h3>
+          <form id="productForm" enctype="multipart/form-data">
+            <input type="hidden" id="editingProductId" value="" />
+
+            <div class="form-group">
+              <label for="prodName">Nome do Produto *</label>
+              <input type="text" id="prodName" class="form-control" required placeholder="Ex: Camisa Flamengo Home 2026" />
+            </div>
+
+            <div class="form-group">
+              <label for="prodCategory">Categoria *</label>
+              <select id="prodCategory" class="form-control" required></select>
+            </div>
+
+            <div class="form-group">
+              <label for="prodDescription">Descrição Detalhada</label>
+              <textarea id="prodDescription" class="form-control" rows="3" placeholder="Detalhes do tecido, escudo, versão..."></textarea>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="prodPrice">Preço Normal (R$) *</label>
+                <input type="number" step="0.01" min="0.01" id="prodPrice" class="form-control" required placeholder="199.90" />
+              </div>
+              <div class="form-group">
+                <label for="prodPromoPrice">Preço Promocional (R$)</label>
+                <input type="number" step="0.01" min="0" id="prodPromoPrice" class="form-control" placeholder="Opcional (ex: 159.90)" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="prodStock">Quantidade em Estoque *</label>
+              <input type="number" min="0" id="prodStock" class="form-control" required value="10" />
+            </div>
+
+            <div class="form-group">
+              <label>Tamanhos Disponíveis *</label>
+              <div class="sizes-checkbox-grid" id="sizesCheckboxes">
+                <label class="size-check-item"><input type="checkbox" value="P" checked /> P</label>
+                <label class="size-check-item"><input type="checkbox" value="M" checked /> M</label>
+                <label class="size-check-item"><input type="checkbox" value="G" checked /> G</label>
+                <label class="size-check-item"><input type="checkbox" value="GG" checked /> GG</label>
+                <label class="size-check-item"><input type="checkbox" value="XG" /> XG</label>
+                <label class="size-check-item"><input type="checkbox" value="Infantil" /> Infantil</label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="prodPhotos">Fotos do Produto (JPG, PNG ou WEBP - até 5 fotos)</label>
+              <input type="file" id="prodPhotos" class="form-control" accept="image/jpeg,image/png,image/webp" multiple />
+              <small id="editPhotoHint" style="display: none; color: var(--text-secondary); font-size: 0.76rem; margin-top: 4px;">
+                Deixe em branco para manter as fotos atuais ou selecione novas imagens para adicionar.
+              </small>
+            </div>
+
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
+              <label class="custom-toggle">
+                <input type="checkbox" id="prodAvailable" checked />
+                Produto Disponível para Venda na Loja
+              </label>
+              <label class="custom-toggle">
+                <input type="checkbox" id="prodCustomizable" checked />
+                Permitir Personalização (Nome e Número)
+              </label>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 18px;">
+              <button type="submit" class="btn-primary" style="flex: 1;" id="saveProductBtn">
+                Salvar Produto
+              </button>
+              <button type="button" class="btn-outline" id="cancelEditBtn" style="display: none;">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Lista de Produtos Cadastrados -->
+        <div class="panel-box">
+          <h3>PRODUTOS CADASTRADOS NO BANCO DE DADOS</h3>
+          <div class="admin-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Foto</th>
+                  <th>Produto / Categoria</th>
+                  <th>Preço</th>
+                  <th>Estoque</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="adminProductsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toastNotification"></div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="border-top: none; padding-top: 0;">
+        <span>© 2026 Fanatics Imports (@Fanatics.imports_ofc) — Módulo de Catálogo</span>
+        <strong>Desenvolvido por Maycon Silva</strong>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const TOKEN_KEY = 'fanatics_admin_token';
+    let cachedProducts = [];
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+
+    function formatBRL(val) {
+      return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function getToken() {
+      return localStorage.getItem(TOKEN_KEY);
+    }
+
+    async function checkAuth() {
+      const token = getToken();
+      if (!token) {
+        showLoginView();
+        return;
+      }
+      try {
+        const res = await fetch('/api/auth/verify', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          showManagerView();
+        } else {
+          localStorage.removeItem(TOKEN_KEY);
+          showLoginView();
+        }
+      } catch {
+        showLoginView();
+      }
+    }
+
+    function showLoginView() {
+      document.getElementById('loginSection').style.display = 'block';
+      document.getElementById('managerSection').style.display = 'none';
+      document.getElementById('logoutBtn').style.display = 'none';
+    }
+
+    async function showManagerView() {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('managerSection').style.display = 'block';
+      document.getElementById('logoutBtn').style.display = 'inline-flex';
+      await loadAdminCategories();
+      await loadAdminProducts();
+    }
+
+    async function loadAdminCategories() {
+      const select = document.getElementById('prodCategory');
+      const res = await fetch('/api/categories');
+      if (!res.ok) return;
+      const cats = await res.json();
+      select.innerHTML = cats.map((c) => `<option value="${c.name}">${c.name}</option>`).join('');
+    }
+
+    async function loadAdminProducts() {
+      const res = await fetch('/api/products');
+      if (!res.ok) return;
+      cachedProducts = await res.json();
+
+      document.getElementById('adminProductsSummary').textContent = `${cachedProducts.length} produtos ativos no banco`;
+      const tbody = document.getElementById('adminProductsTableBody');
+
+      if (cachedProducts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-secondary);">Nenhum produto cadastrado.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = cachedProducts
+        .map((p) => {
+          const hasPromo = p.promoPrice && p.promoPrice < p.price;
+          return `
+            <tr>
+              <td><img src="${p.image}" alt="${p.name}" class="table-thumb" /></td>
+              <td>
+                <strong>${p.name}</strong><br/>
+                <span style="font-size: 0.76rem; color: var(--green-primary);">${p.category}</span><br/>
+                <span style="font-size: 0.74rem; color: var(--text-secondary);">Tamanhos: ${p.sizes.join(', ')}</span>
+              </td>
+              <td>
+                ${hasPromo ? `<span style="text-decoration:line-through; color:var(--text-muted); font-size:0.78rem;">${formatBRL(p.price)}</span><br/>` : ''}
+                <strong style="color: var(--green-primary);">${formatBRL(hasPromo ? p.promoPrice : p.price)}</strong>
+              </td>
+              <td><strong>${p.stock}</strong> un.</td>
+              <td>
+                <span class="status-pill ${p.available && p.stock > 0 ? 'status-ok' : 'status-off'}">
+                  ${p.available && p.stock > 0 ? 'Disponível' : 'Indisponível'}
+                </span>
+              </td>
+              <td>
+                <div class="action-btns">
+                  <button type="button" class="btn-sm btn-edit" onclick="startEditProduct(${p.id})">Editar</button>
+                  <button type="button" class="btn-sm btn-del" onclick="deleteProduct(${p.id}, '${p.name.replace(/'/g, "\\'")}')">Excluir</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        })
+        .join('');
+    }
+
+    function startEditProduct(id) {
+      const prod = cachedProducts.find((p) => p.id === id);
+      if (!prod) return;
+
+      document.getElementById('editingProductId').value = prod.id;
+      document.getElementById('formTitle').textContent = `EDITANDO PRODUTO #${prod.id}`;
+      document.getElementById('prodName').value = prod.name;
+      document.getElementById('prodCategory').value = prod.category;
+      document.getElementById('prodDescription').value = prod.description;
+      document.getElementById('prodPrice').value = prod.price;
+      document.getElementById('prodPromoPrice').value = prod.promoPrice || '';
+      document.getElementById('prodStock').value = prod.stock;
+      document.getElementById('prodAvailable').checked = prod.available;
+      document.getElementById('prodCustomizable').checked = prod.customizable;
+      document.getElementById('prodPhotos').value = '';
+      document.getElementById('editPhotoHint').style.display = 'block';
+      document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+      document.getElementById('saveProductBtn').textContent = 'Atualizar Produto';
+
+      document.querySelectorAll('#sizesCheckboxes input[type="checkbox"]').forEach((cb) => {
+        cb.checked = prod.sizes.includes(cb.value);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+      document.getElementById('editingProductId').value = '';
+      document.getElementById('formTitle').textContent = 'CADASTRAR NOVO PRODUTO';
+      document.getElementById('productForm').reset();
+      document.getElementById('prodStock').value = 10;
+      document.getElementById('prodAvailable').checked = true;
+      document.getElementById('prodCustomizable').checked = true;
+      document.getElementById('editPhotoHint').style.display = 'none';
+      document.getElementById('cancelEditBtn').style.display = 'none';
+      document.getElementById('saveProductBtn').textContent = 'Salvar Produto';
+    }
+
+    async function deleteProduct(id, name) {
+      if (!confirm(`Tem certeza que deseja excluir permanentemente o produto "${name}"?`)) return;
+
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || 'Produto excluído!');
+        if (document.getElementById('editingProductId').value == id) resetForm();
+        await loadAdminProducts();
+      } else {
+        showToast(data.error || 'Erro ao excluir produto.');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+
+      document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('loginUser').value.trim();
+        const password = document.getElementById('loginPass').value;
+
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          localStorage.setItem(TOKEN_KEY, data.token);
+          showToast('Bem-vindo ao Painel Fanatics Imports!');
+          showManagerView();
+        } else {
+          showToast(data.error || 'Falha no login.');
+        }
+      });
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem(TOKEN_KEY);
+        showLoginView();
+      });
+
+      document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+
+      document.getElementById('productForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const selectedSizes = Array.from(document.querySelectorAll('#sizesCheckboxes input:checked')).map((cb) => cb.value);
+        if (selectedSizes.length === 0) {
+          showToast('Selecione pelo menos um tamanho.');
+          return;
+        }
+
+        const editingId = document.getElementById('editingProductId').value;
+        const formData = new FormData();
+        formData.append('name', document.getElementById('prodName').value.trim());
+        formData.append('category', document.getElementById('prodCategory').value);
+        formData.append('description', document.getElementById('prodDescription').value.trim());
+        formData.append('price', document.getElementById('prodPrice').value);
+        formData.append('promoPrice', document.getElementById('prodPromoPrice').value);
+        formData.append('stock', document.getElementById('prodStock').value);
+        formData.append('sizes', JSON.stringify(selectedSizes));
+        formData.append('available', document.getElementById('prodAvailable').checked);
+        formData.append('customizable', document.getElementById('prodCustomizable').checked);
+
+        const files = document.getElementById('prodPhotos').files;
+        for (let i = 0; i < files.length; i++) {
+          formData.append('photos', files[i]);
+        }
+
+        const url = editingId ? `/api/products/${editingId}` : '/api/products';
+        const method = editingId ? 'PUT' : 'POST';
+
+        const btn = document.getElementById('saveProductBtn');
+        btn.disabled = true;
+
+        try {
+          const res = await fetch(url, {
+            method,
+            headers: { Authorization: `Bearer ${getToken()}` },
+            body: formData
+          });
+          const data = await res.json();
+
+          if (res.ok) {
+            showToast(data.message || 'Salvo com sucesso!');
+            resetForm();
+            await loadAdminProducts();
+          } else {
+            showToast(data.error || 'Erro ao salvar produto.');
+          }
+        } catch {
+          showToast('Erro de comunicação com o servidor.');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

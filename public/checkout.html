@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finalizar Pedido — Fanatics Imports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <div class="logo-badge">FI</div>
+        FANATICS <span>IMPORTS</span>
+      </a>
+      <a href="/" class="btn-nav">← Continuar Comprando</a>
+    </div>
+  </header>
+
+  <main class="page-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>FINALIZAR <span>PEDIDO</span></h2>
+        <span class="products-count">Ambiente Seguro • Fanatics Imports</span>
+      </div>
+
+      <form id="checkoutForm" class="checkout-grid">
+        <div>
+          <!-- 1. Dados Pessoais -->
+          <div class="panel-box">
+            <h3>1. DADOS DO CLIENTE</h3>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="customerName">Nome Completo *</label>
+                <input type="text" id="customerName" class="form-control" required placeholder="Ex: João da Silva" />
+              </div>
+              <div class="form-group">
+                <label for="customerPhone">Telefone / WhatsApp (com DDD) *</label>
+                <input type="tel" id="customerPhone" class="form-control" required placeholder="Ex: (21) 99999-9999" />
+              </div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="customerEmail">E-mail (para comprovante)</label>
+                <input type="email" id="customerEmail" class="form-control" placeholder="seuemail@exemplo.com" />
+              </div>
+              <div class="form-group">
+                <label for="customerCpf">CPF (necessário para emissão PIX/Cartão) *</label>
+                <input type="text" id="customerCpf" class="form-control" required placeholder="000.000.000-00" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Endereço de Entrega -->
+          <div class="panel-box">
+            <h3>2. ENDEREÇO DE ENTREGA</h3>
+            <div class="form-row-3">
+              <div class="form-group">
+                <label for="addrZip">CEP *</label>
+                <input type="text" id="addrZip" class="form-control" required placeholder="00000-000" />
+              </div>
+              <div class="form-group">
+                <label for="addrStreet">Rua / Avenida *</label>
+                <input type="text" id="addrStreet" class="form-control" required placeholder="Nome da rua" />
+              </div>
+              <div class="form-group">
+                <label for="addrNumber">Número *</label>
+                <input type="text" id="addrNumber" class="form-control" required placeholder="123" />
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="addrComplement">Complemento / Ponto de Referência</label>
+                <input type="text" id="addrComplement" class="form-control" placeholder="Apto, bloco, casa..." />
+              </div>
+              <div class="form-group">
+                <label for="addrNeighborhood">Bairro *</label>
+                <input type="text" id="addrNeighborhood" class="form-control" required placeholder="Seu bairro" />
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="addrCity">Cidade *</label>
+                <input type="text" id="addrCity" class="form-control" required placeholder="Sua cidade" />
+              </div>
+              <div class="form-group">
+                <label for="addrState">Estado (UF) *</label>
+                <input type="text" id="addrState" class="form-control" maxlength="2" required placeholder="RJ" style="text-transform: uppercase;" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Forma de Pagamento -->
+          <div class="panel-box">
+            <h3>3. FORMA DE PAGAMENTO</h3>
+            <div class="payment-options" id="paymentOptions">
+              <label class="payment-option selected">
+                <input type="radio" name="paymentMethod" value="PIX" checked />
+                <strong>PIX Instantâneo</strong>
+                <span>QR Code + Copia e Cola</span>
+              </label>
+              <label class="payment-option">
+                <input type="radio" name="paymentMethod" value="Cartão de Crédito" />
+                <strong>Cartão de Crédito</strong>
+                <span>Processamento seguro</span>
+              </label>
+              <label class="payment-option">
+                <input type="radio" name="paymentMethod" value="Cartão de Débito" />
+                <strong>Cartão de Débito</strong>
+                <span>Débito online</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumo do Pedido -->
+        <aside class="panel-box">
+          <h3>RESUMO DO PEDIDO</h3>
+          <div id="checkoutSummaryItems" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;"></div>
+
+          <div style="border-top: 1px solid var(--border-color); padding-top: 14px; margin-bottom: 18px;">
+            <div class="cart-total-row" style="margin-bottom: 6px; font-size: 0.95rem;">
+              <span style="color: var(--text-secondary);">Subtotal:</span>
+              <span id="checkoutSubtotal" style="font-size: 1rem; color: var(--text-primary);">R$ 0,00</span>
+            </div>
+            <div class="cart-total-row" style="margin-bottom: 0;">
+              <span>Total a Pagar:</span>
+              <span id="checkoutTotal">R$ 0,00</span>
+            </div>
+          </div>
+
+          <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px;">
+            Ao confirmar, seus dados serão tratados conforme a LGPD exclusivamente para entrega e acompanhamento do seu pedido.
+          </p>
+
+          <button type="submit" class="btn-primary" style="width: 100%;" id="confirmOrderBtn">
+            Confirmar Pedido e Gerar Pagamento
+          </button>
+        </aside>
+      </form>
+
+      <!-- Tela de Confirmação após Gerar o Pedido -->
+      <div id="orderSuccessBox" class="panel-box" style="display: none; max-width: 680px; margin: 0 auto; text-align: center;">
+        <span class="hero-tag">PEDIDO REGISTRADO COM SUCESSO</span>
+        <h2 style="font-size: 2.2rem; margin-bottom: 8px;">CÓDIGO: <span id="generatedOrderCode" style="color: var(--green-primary);">#FI-0001</span></h2>
+        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+          Guarde o código do pedido e o telefone cadastrado para acompanhar cada etapa da entrega.
+        </p>
+        <div id="orderSuccessSummary" style="text-align: left; background: var(--bg-secondary); padding: 18px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 22px;"></div>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <a href="/rastreio.html" class="btn-primary">Acompanhar Pedido Agora</a>
+          <a href="/" class="btn-outline">Voltar para a Loja</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toastNotification"></div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="border-top: none; padding-top: 0;">
+        <span>© 2026 Fanatics Imports (@Fanatics.imports_ofc)</span>
+        <strong>Desenvolvido por Maycon Silva</strong>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/cart.js"></script>
+</body>
+</html>
