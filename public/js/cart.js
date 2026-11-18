@@ -1,10 +1,9 @@
 /**
- * FANATICS IMPORTS — GERENCIAMENTO DE CARRINHO E CHECKOUT
+ * FANATICS IMPORTS — GERENCIAMENTO DE CARRINHO E CHECKOUT INTEGRADO AO SQLITE
  * Desenvolvido por Maycon Silva
  */
 
 const CART_STORAGE_KEY = 'fanatics_imports_cart_v1';
-const LOCAL_ORDERS_KEY = 'fanatics_imports_local_orders_v1';
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString('pt-BR', {
@@ -20,7 +19,7 @@ function showToast(message) {
   toast.classList.add('show');
   setTimeout(() => {
     toast.classList.remove('show');
-  }, 3000);
+  }, 3500);
 }
 
 function getCart() {
@@ -109,11 +108,9 @@ function updateCartUI() {
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = getCartTotal(cart);
 
-  // Atualiza badge do cabeçalho
   const badge = document.getElementById('cartCountBadge');
   if (badge) badge.textContent = totalItems;
 
-  // Atualiza gaveta lateral (index.html)
   const container = document.getElementById('cartItemsContainer');
   const totalEl = document.getElementById('cartTotalValue');
   if (container && totalEl) {
@@ -159,7 +156,6 @@ function updateCartUI() {
     }
   }
 
-  // Atualiza resumo na página checkout.html
   const summaryContainer = document.getElementById('checkoutSummaryItems');
   if (summaryContainer) {
     const subtotalEl = document.getElementById('checkoutSubtotal');
@@ -190,8 +186,67 @@ function updateCartUI() {
   }
 }
 
+function setupCheckoutMasks() {
+  const phoneInput = document.getElementById('customerPhone');
+  if (phoneInput) {
+    phoneInput.addEventListener('input', (e) => {
+      let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+      if (v.length > 6) {
+        v = `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`;
+      } else if (v.length > 2) {
+        v = `(${v.slice(0, 2)}) ${v.slice(2)}`;
+      }
+      e.target.value = v;
+    });
+  }
+
+  const cpfInput = document.getElementById('customerCpf');
+  if (cpfInput) {
+    cpfInput.addEventListener('input', (e) => {
+      let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+      if (v.length > 9) {
+        v = `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6, 9)}-${v.slice(9)}`;
+      } else if (v.length > 6) {
+        v = `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6)}`;
+      } else if (v.length > 3) {
+        v = `${v.slice(0, 3)}.${v.slice(3)}`;
+      }
+      e.target.value = v;
+    });
+  }
+
+  const zipInput = document.getElementById('addrZip');
+  if (zipInput) {
+    zipInput.addEventListener('input', async (e) => {
+      let v = e.target.value.replace(/\D/g, '').slice(0, 8);
+      if (v.length > 5) {
+        e.target.value = `${v.slice(0, 5)}-${v.slice(5)}`;
+      } else {
+        e.target.value = v;
+      }
+
+      if (v.length === 8) {
+        try {
+          const resp = await fetch(`https://viacep.com.br/ws/${v}/json/`);
+          if (resp.ok) {
+            const addr = await resp.json();
+            if (!addr.erro) {
+              if (addr.logradouro) document.getElementById('addrStreet').value = addr.logradouro;
+              if (addr.bairro) document.getElementById('addrNeighborhood').value = addr.bairro;
+              if (addr.localidade) document.getElementById('addrCity').value = addr.localidade;
+              if (addr.uf) document.getElementById('addrState').value = addr.uf;
+              document.getElementById('addrNumber').focus();
+            }
+          }
+        } catch {}
+      }
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   updateCartUI();
+  setupCheckoutMasks();
 
   const openBtn = document.getElementById('openCartBtn');
   const closeBtn = document.getElementById('closeCartBtn');
@@ -212,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Seleção visual das formas de pagamento no checkout
   const paymentLabels = document.querySelectorAll('.payment-option');
   paymentLabels.forEach((label) => {
     label.addEventListener('click', () => {
@@ -223,7 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Envio do formulário de Checkout
   const checkoutForm = document.getElementById('checkoutForm');
   if (checkoutForm) {
     checkoutForm.addEventListener('submit', async (e) => {
@@ -252,58 +305,69 @@ document.addEventListener('DOMContentLoaded', () => {
           state: document.getElementById('addrState').value.trim().toUpperCase()
         },
         paymentMethod,
-        items: cart,
-        total: getCartTotal(cart)
+        items: cart
       };
 
       const confirmBtn = document.getElementById('confirmOrderBtn');
       confirmBtn.disabled = true;
-      confirmBtn.textContent = 'Processando pedido...';
+      confirmBtn.textContent = 'Registrando pedido...';
 
-      let createdOrder = null;
-
-      // Tenta enviar para a API REST do backend (Etapas 4/5/8); se ainda não estiver ativa, salva localmente para teste visual
       try {
         const res = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(orderPayload)
         });
-        if (res.ok) {
-          createdOrder = await res.json();
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showToast(data.error || 'Não foi possível concluir o pedido.');
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Confirmar Pedido';
+          return;
         }
+
+        localStorage.removeItem(CART_STORAGE_KEY);
+        updateCartUI();
+
+        const itemsListHtml = data.items
+          .map(
+            (i) =>
+              `<div style="margin-top:4px; font-size:0.86rem;">• ${i.quantity}x <strong>${i.name}</strong> (Tam: ${i.size}) ${
+                i.customized ? `— Personalização: ${i.customName} #${i.customNumber}` : ''
+              }</div>`
+          )
+          .join('');
+
+        checkoutForm.style.display = 'none';
+        const successBox = document.getElementById('orderSuccessBox');
+        document.getElementById('generatedOrderCode').textContent = data.code;
+        document.getElementById('orderSuccessSummary').innerHTML = `
+          <p><strong>Cliente:</strong> ${data.customer.name}</p>
+          <p><strong>Telefone:</strong> ${data.customer.phone}</p>
+          <p><strong>Entrega:</strong> ${data.address.street}, ${data.address.number} - ${data.address.neighborhood}, ${data.address.city}/${data.address.state}</p>
+          <p><strong>Forma de Pagamento:</strong> ${data.paymentMethod}</p>
+          <p><strong>Status do Pagamento:</strong> <span style="color: var(--warning); font-weight: 700;">${data.paymentStatus}</span></p>
+          <p><strong>Status do Pedido:</strong> <span style="color: var(--green-primary); font-weight: 700;">${data.orderStatus}</span></p>
+          <div style="margin: 10px 0; padding-top: 10px; border-top: 1px solid var(--border-color);">
+            <strong>Itens:</strong>
+            ${itemsListHtml}
+          </div>
+          <p style="font-size: 1.1rem; margin-top: 8px;"><strong>Valor Total:</strong> <span style="color: var(--green-primary);">${formatCurrency(data.total)}</span></p>
+        `;
+
+        const trackLink = document.getElementById('trackDirectLink');
+        if (trackLink) {
+          trackLink.href = `/rastreio.html?code=${encodeURIComponent(data.code)}`;
+        }
+
+        successBox.style.display = 'block';
       } catch {
-        // Fallback silencioso para armazenamento local na Etapa 2
+        showToast('Erro de conexão com o servidor. Verifique se o Node.js está rodando.');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirmar Pedido';
       }
-
-      if (!createdOrder) {
-        const localOrders = JSON.parse(localStorage.getItem(LOCAL_ORDERS_KEY) || '[]');
-        const nextNumber = String(localOrders.length + 1).padStart(4, '0');
-        createdOrder = {
-          code: `#FI-${nextNumber}`,
-          ...orderPayload,
-          paymentStatus: 'Aguardando pagamento',
-          orderStatus: 'Pedido recebido',
-          createdAt: new Date().toLocaleString('pt-BR')
-        };
-        localOrders.push(createdOrder);
-        localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(localOrders));
-      }
-
-      localStorage.removeItem(CART_STORAGE_KEY);
-      updateCartUI();
-
-      checkoutForm.style.display = 'none';
-      const successBox = document.getElementById('orderSuccessBox');
-      document.getElementById('generatedOrderCode').textContent = createdOrder.code;
-      document.getElementById('orderSuccessSummary').innerHTML = `
-        <p><strong>Cliente:</strong> ${createdOrder.customer.name}</p>
-        <p><strong>Telefone:</strong> ${createdOrder.customer.phone}</p>
-        <p><strong>Forma de Pagamento:</strong> ${createdOrder.paymentMethod}</p>
-        <p><strong>Status Atual:</strong> <span style="color: var(--green-primary);">${createdOrder.paymentStatus}</span></p>
-        <p><strong>Total:</strong> ${formatCurrency(createdOrder.total)}</p>
-      `;
-      successBox.style.display = 'block';
     });
   }
 });

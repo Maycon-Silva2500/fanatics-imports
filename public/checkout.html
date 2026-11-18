@@ -24,7 +24,7 @@
     <div class="container">
       <div class="section-header">
         <h2>FINALIZAR <span>PEDIDO</span></h2>
-        <span class="products-count">Ambiente Seguro • Fanatics Imports</span>
+        <span class="products-count">Checkout Seguro • Fanatics Imports</span>
       </div>
 
       <form id="checkoutForm" class="checkout-grid">
@@ -39,17 +39,17 @@
               </div>
               <div class="form-group">
                 <label for="customerPhone">Telefone / WhatsApp (com DDD) *</label>
-                <input type="tel" id="customerPhone" class="form-control" required placeholder="Ex: (21) 99999-9999" />
+                <input type="tel" id="customerPhone" class="form-control" maxlength="15" required placeholder="Ex: (21) 99999-9999" />
               </div>
             </div>
             <div class="form-row-2">
               <div class="form-group">
-                <label for="customerEmail">E-mail (para comprovante)</label>
+                <label for="customerEmail">E-mail (opcional)</label>
                 <input type="email" id="customerEmail" class="form-control" placeholder="seuemail@exemplo.com" />
               </div>
               <div class="form-group">
                 <label for="customerCpf">CPF (necessário para emissão PIX/Cartão) *</label>
-                <input type="text" id="customerCpf" class="form-control" required placeholder="000.000.000-00" />
+                <input type="text" id="customerCpf" class="form-control" maxlength="14" required placeholder="000.000.000-00" />
               </div>
             </div>
           </div>
@@ -60,7 +60,7 @@
             <div class="form-row-3">
               <div class="form-group">
                 <label for="addrZip">CEP *</label>
-                <input type="text" id="addrZip" class="form-control" required placeholder="00000-000" />
+                <input type="text" id="addrZip" class="form-control" maxlength="9" required placeholder="00000-000" />
               </div>
               <div class="form-group">
                 <label for="addrStreet">Rua / Avenida *</label>
@@ -74,7 +74,7 @@
 
             <div class="form-row-2">
               <div class="form-group">
-                <label for="addrComplement">Complemento / Ponto de Referência</label>
+                <label for="addrComplement">Complemento / Referência</label>
                 <input type="text" id="addrComplement" class="form-control" placeholder="Apto, bloco, casa..." />
               </div>
               <div class="form-group">
@@ -135,25 +135,25 @@
           </div>
 
           <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 16px;">
-            Ao confirmar, seus dados serão tratados conforme a LGPD exclusivamente para entrega e acompanhamento do seu pedido.
+            Seus dados são protegidos conforme a LGPD e utilizados exclusivamente para faturamento e entrega do seu pedido.
           </p>
 
           <button type="submit" class="btn-primary" style="width: 100%;" id="confirmOrderBtn">
-            Confirmar Pedido e Gerar Pagamento
+            Confirmar Pedido
           </button>
         </aside>
       </form>
 
-      <!-- Tela de Confirmação após Gerar o Pedido -->
+      <!-- Tela de Confirmação após Gerar o Pedido Real no Banco -->
       <div id="orderSuccessBox" class="panel-box" style="display: none; max-width: 680px; margin: 0 auto; text-align: center;">
-        <span class="hero-tag">PEDIDO REGISTRADO COM SUCESSO</span>
-        <h2 style="font-size: 2.2rem; margin-bottom: 8px;">CÓDIGO: <span id="generatedOrderCode" style="color: var(--green-primary);">#FI-0001</span></h2>
+        <span class="hero-tag">PEDIDO REGISTRADO NO SISTEMA</span>
+        <h2 style="font-size: 2.3rem; margin-bottom: 8px;">CÓDIGO: <span id="generatedOrderCode" style="color: var(--green-primary);">#FI-0001</span></h2>
         <p style="color: var(--text-secondary); margin-bottom: 20px;">
-          Guarde o código do pedido e o telefone cadastrado para acompanhar cada etapa da entrega.
+          Guarde o código do pedido e o telefone cadastrado para acompanhar a entrega a qualquer momento.
         </p>
         <div id="orderSuccessSummary" style="text-align: left; background: var(--bg-secondary); padding: 18px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 22px;"></div>
         <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-          <a href="/rastreio.html" class="btn-primary">Acompanhar Pedido Agora</a>
+          <a id="trackDirectLink" href="/rastreio.html" class="btn-primary">Acompanhar Pedido Agora</a>
           <a href="/" class="btn-outline">Voltar para a Loja</a>
         </div>
       </div>

@@ -13,8 +13,11 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 
 const { initDatabase } = require('./config/db');
+const { ensureDailyAutoBackup } = require('./services/backupService');
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const databaseRoutes = require('./routes/databaseRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +61,8 @@ app.use('/admin', express.static(path.join(__dirname, '../admin')));
 // 3. Rotas da API REST
 app.use('/api/auth', authRoutes);
 app.use('/api', productRoutes);
+app.use('/api', orderRoutes);
+app.use('/api', databaseRoutes);
 
 // Rota de Diagnóstico do Sistema
 app.get('/api/status', (req, res) => {
@@ -74,7 +79,7 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Tratamento global de erros (incluindo limites do Multer)
+// Tratamento global de erros
 app.use((err, req, res, next) => {
   if (err) {
     return res.status(400).json({ error: err.message || 'Erro ao processar requisição.' });
@@ -82,8 +87,9 @@ app.use((err, req, res, next) => {
   next();
 });
 
-// Inicializa o Banco de Dados e sobe o Servidor
+// Inicializa o Banco de Dados, garante Backup Diário e sobe o Servidor
 initDatabase()
+  .then(() => ensureDailyAutoBackup())
   .then(() => {
     app.listen(PORT, () => {
       console.log('==========================================================');

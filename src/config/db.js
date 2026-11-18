@@ -1,9 +1,10 @@
 /**
- * FANATICS IMPORTS — CAMADA DE BANCO DE DADOS (SQLite -> Preparado para PostgreSQL)
+ * FANATICS IMPORTS — CAMADA DE BANCO DE DADOS COMPLETA (SQLite -> Preparado para PostgreSQL)
  * Desenvolvido por Maycon Silva
  */
 
 const sqlite3 = require('sqlite3').verbose();
+const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 
@@ -22,8 +23,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
-// Ativa chaves estrangeiras no SQLite
+// Ativa integridade referencial e modo WAL para melhor concorrência
 db.run('PRAGMA foreign_keys = ON');
+db.run('PRAGMA journal_mode = WAL');
 
 // Wrappers Promise para queries parametrizadas (proteção contra SQL Injection)
 function dbRun(sql, params = []) {
@@ -51,6 +53,25 @@ function dbAll(sql, params = []) {
       resolve(rows);
     });
   });
+}
+
+// Fila sequencial para transações atômicas seguras
+let transactionQueue = Promise.resolve();
+
+function runInTransaction(workFn) {
+  const next = transactionQueue.then(async () => {
+    await dbRun('BEGIN IMMEDIATE TRANSACTION');
+    try {
+      const result = await workFn();
+      await dbRun('COMMIT');
+      return result;
+    } catch (err) {
+      await dbRun('ROLLBACK');
+      throw err;
+    }
+  });
+  transactionQueue = next.catch(() => {});
+  return next;
 }
 
 function generateDefaultSvg(primaryColor, accentColor, label) {
@@ -85,7 +106,20 @@ const DEFAULT_CATEGORIES = [
 ];
 
 async function initDatabase() {
-  // 1. Tabela de Categorias
+  // 1. Tabela de Usuários Administrativos (Senhas com Hash Bcrypt)
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS admin_users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'admin',
+      active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // 2. Tabela de Categorias
   await dbRun(`
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,7 +130,7 @@ async function initDatabase() {
     )
   `);
 
-  // 2. Tabela de Produtos
+  // 3. Tabela de Produtos
   await dbRun(`
     CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -115,6 +149,154 @@ async function initDatabase() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // 4. Tabela de Clientes
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      phone_normalized TEXT NOT NULL UNIQUE,
+      email TEXT,
+      cpf TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // 5. Tabela de Pedidos
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT NOT NULL UNIQUE,
+      customer_id INTEGER,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      phone_normalized TEXT NOT NULL,
+      customer_email TEXT,
+      customer_cpf TEXT,
+      address_zip TEXT NOT NULL,
+      address_street TEXT NOT NULL,
+      address_number TEXT NOT NULL,
+      address_complement TEXT,
+      address_neighborhood TEXT NOT NULL,
+      address_city TEXT NOT NULL,
+      address_state TEXT NOT NULL,
+      payment_method TEXT NOT NULL,
+      payment_status TEXT NOT NULL DEFAULT 'Aguardando pagamento',
+      order_status TEXT NOT NULL DEFAULT 'Pedido recebido',
+      subtotal REAL NOT NULL,
+      total REAL NOT NULL,
+      mp_payment_id TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
+    )
+  `);
+
+  // 6. Tabela de Itens do Pedido
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      product_id INTEGER,
+      product_name TEXT NOT NULL,
+      category TEXT,
+      size TEXT NOT NULL,
+      customized INTEGER DEFAULT 0,
+      custom_name TEXT,
+      custom_number TEXT,
+      quantity INTEGER NOT NULL,
+      unit_price REAL NOT NULL,
+      total_price REAL NOT NULL,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
+    )
+  `);
+
+  // 7. Tabela de Pagamentos (Transações Mercado Pago)
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      order_code TEXT NOT NULL,
+      provider TEXT NOT NULL DEFAULT 'mercadopago',
+      external_id TEXT,
+      payment_method TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      status_detail TEXT,
+      amount REAL NOT NULL,
+      pix_qr_code TEXT,
+      pix_qr_code_base64 TEXT,
+      ticket_url TEXT,
+      raw_payload TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+    )
+  `);
+
+  // 8. Tabela de Logs de Notificações WhatsApp
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS whatsapp_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER,
+      order_code TEXT,
+      destination_phone TEXT NOT NULL,
+      message_body TEXT NOT NULL,
+      mode TEXT NOT NULL DEFAULT 'local_log',
+      status TEXT NOT NULL DEFAULT 'logged',
+      provider_message_id TEXT,
+      error_details TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
+    )
+  `);
+
+  // 9. Tabela de Configurações Dinâmicas do Sistema
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Índices para consultas rápidas
+  await dbRun(`CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)`);
+  await dbRun(`CREATE INDEX IF NOT EXISTS idx_orders_code ON orders(code)`);
+  await dbRun(`CREATE INDEX IF NOT EXISTS idx_orders_phone ON orders(phone_normalized)`);
+  await dbRun(`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(order_status)`);
+  await dbRun(`CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id)`);
+  await dbRun(`CREATE INDEX IF NOT EXISTS idx_payments_external ON payments(external_id)`);
+
+  // Garante o usuário administrador inicial com senha protegida por hash
+  const adminCount = await dbGet(`SELECT COUNT(*) as total FROM admin_users`);
+  if (adminCount && adminCount.total === 0) {
+    const initialUser = (process.env.ADMIN_INITIAL_USER || 'admin').trim();
+    const initialPass = process.env.ADMIN_INITIAL_PASS || 'Fanatics@2026';
+    const passwordHash = bcrypt.hashSync(initialPass, 10);
+
+    await dbRun(
+      `INSERT INTO admin_users (username, password_hash, role, active) VALUES (?, ?, 'admin', 1)`,
+      [initialUser, passwordHash]
+    );
+    console.log(`[SEGURANÇA] Administrador inicial "${initialUser}" criado com senha criptografada (bcrypt).`);
+  }
+
+  // Garante configurações iniciais padrão
+  const defaultSettings = [
+    ['store_name', process.env.STORE_NAME || 'Fanatics Imports'],
+    ['store_instagram', process.env.STORE_INSTAGRAM || '@Fanatics.imports_ofc'],
+    ['whatsapp_enabled', process.env.WHATSAPP_ENABLED || 'false'],
+    ['whatsapp_api_token', process.env.WHATSAPP_API_TOKEN || ''],
+    ['whatsapp_phone_number_id', process.env.WHATSAPP_PHONE_NUMBER_ID || ''],
+    ['whatsapp_destination_number', process.env.WHATSAPP_DESTINATION_NUMBER || '']
+  ];
+
+  for (const [k, v] of defaultSettings) {
+    await dbRun(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, [k, v]);
+  }
 
   // Garante as 8 categorias oficiais
   for (const cat of DEFAULT_CATEGORIES) {
@@ -251,9 +433,11 @@ async function initDatabase() {
 
 module.exports = {
   db,
+  dbPath,
   dbRun,
   dbGet,
   dbAll,
+  runInTransaction,
   initDatabase,
   generateDefaultSvg
 };
