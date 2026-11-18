@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fanatics Imports — Loja Oficial de Artigos Esportivos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <!-- Barra Superior -->
+  <div class="top-announcement">
+    ENVIO PARA TODO O BRASIL • PERSONALIZAÇÃO COM NOME E NÚMERO • INSTAGRAM: @FANATICS.IMPORTS_OFC
+  </div>
+
+  <!-- Cabeçalho Principal -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <div class="logo-badge">FI</div>
+        FANATICS <span>IMPORTS</span>
+      </a>
+
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Buscar manto, seleção, NBA, retrô..." autocomplete="off" />
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </div>
+
+      <div class="header-actions">
+        <a href="/rastreio.html" class="btn-nav">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+          Rastrear Pedido
+        </a>
+
+        <button type="button" class="btn-cart" id="openCartBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          Carrinho
+          <span class="cart-badge" id="cartCountBadge">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Banner Principal -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="hero-tag">COLEÇÃO TEMPORADA 2026 • QUALIDADE PREMIUM</span>
+        <h1>VISTA A PAIXÃO DO <span>ESPORTE</span> COM PADRÃO DE ELITE</h1>
+        <p>
+          Camisas de futebol, retrôs históricas, regatas NBA, futebol americano, kits infantis e modelos manga longa com personalização exclusiva.
+        </p>
+        <div class="hero-cta-group">
+          <a href="#catalogo" class="btn-primary">Explorar Catálogo</a>
+          <a href="/rastreio.html" class="btn-outline">Acompanhar Meu Pedido</a>
+        </div>
+      </div>
+
+      <div class="hero-card-highlight">
+        <h3 style="color: var(--green-primary); font-size: 1.3rem;">COMPRA SEGURA E RÁPIDA</h3>
+        <p style="font-size: 0.9rem; margin: 8px 0 0;">
+          Escolha seu tamanho, personalize com seu nome e número e pague com aprovação imediata via PIX ou Cartão.
+        </p>
+        <div class="hero-stats">
+          <div class="stat-box">
+            <strong>PIX & CARTÃO</strong>
+            <span>Pagamento verificado</span>
+          </div>
+          <div class="stat-box">
+            <strong>PERSONALIZÁVEL</strong>
+            <span>Nome e número oficiais</span>
+          </div>
+          <div class="stat-box">
+            <strong>8 CATEGORIAS</strong>
+            <span>Futebol, NBA, NFL e mais</span>
+          </div>
+          <div class="stat-box">
+            <strong>RASTREIO ONLINE</strong>
+            <span>Atualização em tempo real</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filtro das 8 Categorias -->
+  <section class="categories-section" id="catalogo">
+    <div class="container">
+      <div class="categories-bar" id="categoriesBar">
+        <button class="category-pill active" data-category="Todas">Todas as Categorias</button>
+        <button class="category-pill" data-category="Camisas de futebol">Camisas de futebol</button>
+        <button class="category-pill" data-category="Camisas retrô">Camisas retrô</button>
+        <button class="category-pill" data-category="NBA">NBA</button>
+        <button class="category-pill" data-category="Futebol americano">Futebol americano</button>
+        <button class="category-pill" data-category="Regatas">Regatas</button>
+        <button class="category-pill" data-category="Kits camisa e bermuda">Kits camisa e bermuda</button>
+        <button class="category-pill" data-category="Camisas infantis">Camisas infantis</button>
+        <button class="category-pill" data-category="Manga longa">Manga longa</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Grade de Produtos -->
+  <main class="catalog-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 id="catalogHeading">CATÁLOGO <span>COMPLETO</span></h2>
+        <span class="products-count" id="productsCount">Carregando produtos...</span>
+      </div>
+
+      <div class="products-grid" id="productsGrid"></div>
+    </div>
+  </main>
+
+  <!-- Modal de Detalhes e Personalização do Produto -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal-content">
+      <button type="button" class="modal-close" id="closeProductModal">×</button>
+      <div class="modal-product-grid" id="modalProductBody"></div>
+    </div>
+  </div>
+
+  <!-- Gaveta Lateral do Carrinho -->
+  <div class="cart-backdrop" id="cartBackdrop"></div>
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h3>SEU CARRINHO</h3>
+      <button type="button" class="modal-close" style="position: static;" id="closeCartBtn">×</button>
+    </div>
+
+    <div class="cart-items" id="cartItemsContainer"></div>
+
+    <div class="cart-footer">
+      <div class="cart-total-row">
+        <span>Total do Pedido:</span>
+        <span id="cartTotalValue">R$ 0,00</span>
+      </div>
+      <button type="button" class="btn-primary" style="width: 100%;" id="goToCheckoutBtn">
+        Finalizar Pedido →
+      </button>
+    </div>
+  </aside>
+
+  <!-- Notificação Flutuante -->
+  <div class="toast" id="toastNotification"></div>
+
+  <!-- Rodapé -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="logo" style="margin-bottom: 12px;">
+            <div class="logo-badge">FI</div>
+            FANATICS <span>IMPORTS</span>
+          </div>
+          <p>Sua loja especializada em mantos esportivos importados, edições retrô, basquete e futebol americano com qualidade superior.</p>
+          <p style="color: var(--green-primary); font-weight: 600;">Instagram Oficial: @Fanatics.imports_ofc</p>
+        </div>
+
+        <div>
+          <h4>NAVEGAÇÃO RÁPIDA</h4>
+          <ul>
+            <li><a href="/">Início & Catálogo</a></li>
+            <li><a href="/rastreio.html">Acompanhar Pedido</a></li>
+            <li><a href="/checkout.html">Finalizar Compra</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>SEGURANÇA & ATENDIMENTO</h4>
+          <ul>
+            <li>Pagamentos via PIX e Cartão</li>
+            <li>Proteção de Dados (LGPD)</li>
+            <li>Atendimento direto via WhatsApp</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© 2026 Fanatics Imports (@Fanatics.imports_ofc). Todos os direitos reservados.</span>
+        <strong>Desenvolvido por Maycon Silva</strong>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/cart.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
