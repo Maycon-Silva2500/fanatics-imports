@@ -18,6 +18,7 @@ const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const databaseRoutes = require('./routes/databaseRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,12 +50,15 @@ app.use(express.urlencoded({ extended: true }));
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 500,
+  max: 600,
   message: { error: 'Muitas requisições deste IP. Tente novamente em alguns minutos.' }
 });
 app.use('/api/', apiLimiter);
 
 // 2. Arquivos Estáticos (Frontend da Loja e Painel Administrativo)
+app.get('/admin', (req, res) => {
+  res.redirect('/admin/dashboard.html');
+});
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/admin', express.static(path.join(__dirname, '../admin')));
 
@@ -63,6 +67,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api', productRoutes);
 app.use('/api', orderRoutes);
 app.use('/api', databaseRoutes);
+app.use('/api', adminRoutes);
 
 // Rota de Diagnóstico do Sistema
 app.get('/api/status', (req, res) => {
@@ -93,10 +98,10 @@ initDatabase()
   .then(() => {
     app.listen(PORT, () => {
       console.log('==========================================================');
-      console.log('  FANATICS IMPORTS - SERVIDOR E BANCO DE DADOS ATIVOS');
+      console.log('  FANATICS IMPORTS - SERVIDOR E PAINEL ADMIN ATIVOS');
       console.log('  Instagram: @Fanatics.imports_ofc');
-      console.log(`  Loja Virtual:      http://localhost:${PORT}`);
-      console.log(`  Gestão Produtos:   http://localhost:${PORT}/admin/produtos.html`);
+      console.log(`  Loja Virtual:         http://localhost:${PORT}`);
+      console.log(`  Painel Administrativo: http://localhost:${PORT}/admin/login.html`);
       console.log('  Credito: Desenvolvido por Maycon Silva');
       console.log('==========================================================');
     });

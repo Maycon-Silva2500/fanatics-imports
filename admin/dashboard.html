@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Administrativo — Fanatics Imports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- MENU LATERAL COM AS 9 SEÇÕES -->
+    <aside class="sidebar" id="adminSidebar">
+      <div class="sidebar-header">
+        <div class="logo-badge">FI</div>
+        <div class="sidebar-brand">FANATICS <span>ADMIN</span></div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button type="button" class="nav-item active" data-tab="dashboard">Dashboard</button>
+        <button type="button" class="nav-item" data-tab="pedidos">Pedidos</button>
+        <button type="button" class="nav-item" data-tab="produtos">Produtos</button>
+        <button type="button" class="nav-item" data-tab="categorias">Categorias</button>
+        <button type="button" class="nav-item" data-tab="clientes">Clientes</button>
+        <button type="button" class="nav-item" data-tab="estoque">Estoque</button>
+        <button type="button" class="nav-item" data-tab="pagamentos">Pagamentos</button>
+        <button type="button" class="nav-item" data-tab="relatorios">Relatórios</button>
+        <button type="button" class="nav-item" data-tab="configuracoes">Configurações</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div>Instagram: @Fanatics.imports_ofc</div>
+        <div style="margin-top: 4px; color: var(--green);">Desenvolvido por Maycon Silva</div>
+      </div>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL -->
+    <div class="main-area">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button type="button" class="mobile-menu-btn" id="toggleSidebarBtn">☰</button>
+          <h2 id="currentPageTitle" style="font-size: 1.45rem;">DASHBOARD GERAL</h2>
+        </div>
+
+        <div class="topbar-actions">
+          <a href="/" target="_blank" class="btn-topbar">Abrir Loja ↗</a>
+          <button type="button" id="logoutBtn" class="btn-topbar btn-logout">Sair</button>
+        </div>
+      </header>
+
+      <main class="content-wrapper">
+        <!-- ==============================================================
+             1. ABA DASHBOARD
+             ============================================================== -->
+        <section id="tab-dashboard" class="tab-section active">
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Total de Pedidos</div>
+              <div class="kpi-value" id="kpiTotalOrders">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Pedidos Novos</div>
+              <div class="kpi-value" id="kpiNewOrders" style="color: var(--info);">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Aguardando Pagamento</div>
+              <div class="kpi-value" id="kpiAwaitingPayment" style="color: var(--warning);">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Pagamentos Aprovados</div>
+              <div class="kpi-value" id="kpiApprovedPayments" style="color: var(--green);">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Em Preparação</div>
+              <div class="kpi-value" id="kpiInPreparation">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Pedidos Enviados</div>
+              <div class="kpi-value" id="kpiShippedOrders">0</div>
+            </div>
+            <div class="kpi-card highlight">
+              <div class="kpi-label">Faturamento Aprovado</div>
+              <div class="kpi-value" id="kpiApprovedRevenue">R$ 0,00</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Faturamento Pendente</div>
+              <div class="kpi-value" id="kpiPendingRevenue" style="color: var(--text-sub);">R$ 0,00</div>
+            </div>
+          </div>
+
+          <div class="charts-grid">
+            <div class="card-box" style="margin-bottom: 0;">
+              <div class="card-box-header">
+                <h3>GRÁFICO DE VENDAS (ÚLTIMOS 7 DIAS)</h3>
+              </div>
+              <div class="canvas-container">
+                <canvas id="dailySalesChart"></canvas>
+              </div>
+            </div>
+
+            <div class="card-box" style="margin-bottom: 0;">
+              <div class="card-box-header">
+                <h3>FATURAMENTO POR CATEGORIA</h3>
+              </div>
+              <div class="canvas-container">
+                <canvas id="categorySalesChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             2. ABA PEDIDOS
+             ============================================================== -->
+        <section id="tab-pedidos" class="tab-section">
+          <div class="card-box">
+            <div class="card-box-header">
+              <h3>GERENCIAMENTO DE PEDIDOS</h3>
+              <button type="button" class="btn-secondary" id="refreshOrdersBtn">Atualizar Lista</button>
+            </div>
+
+            <div class="filters-bar">
+              <div class="filter-field" style="flex: 1; min-width: 220px;">
+                <label>Pesquisar (Código, Cliente ou Telefone)</label>
+                <input type="text" id="orderSearchInput" class="form-control" placeholder="Ex: #FI-0001 ou João..." />
+              </div>
+
+              <div class="filter-field">
+                <label>Status do Pedido</label>
+                <select id="orderStatusFilter" class="form-control">
+                  <option value="Todos">Todos os Status</option>
+                  <option value="Pedido recebido">Pedido recebido</option>
+                  <option value="Aguardando pagamento">Aguardando pagamento</option>
+                  <option value="Pagamento aprovado">Pagamento aprovado</option>
+                  <option value="Em preparação">Em preparação</option>
+                  <option value="Enviado">Enviado</option>
+                  <option value="Entregue">Entregue</option>
+                  <option value="Cancelado">Cancelado</option>
+                </select>
+              </div>
+
+              <div class="filter-field">
+                <label>Data Inicial</label>
+                <input type="date" id="orderDateFrom" class="form-control" />
+              </div>
+
+              <div class="filter-field">
+                <label>Data Final</label>
+                <input type="date" id="orderDateTo" class="form-control" />
+              </div>
+
+              <button type="button" class="btn-primary" id="applyOrderFiltersBtn">Filtrar</button>
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pedido</th>
+                    <th>Cliente / Telefone</th>
+                    <th>Produtos / Tamanhos / Personalização</th>
+                    <th>Total</th>
+                    <th>Pagamento</th>
+                    <th>Status Pedido</th>
+                    <th>Data / Hora</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             3. ABA PRODUTOS
+             ============================================================== -->
+        <section id="tab-produtos" class="tab-section">
+          <div class="two-col-layout">
+            <div class="card-box">
+              <div class="card-box-header">
+                <h3 id="prodFormHeading">CADASTRAR PRODUTO</h3>
+              </div>
+
+              <form id="adminProductForm" enctype="multipart/form-data">
+                <input type="hidden" id="editProdId" value="" />
+
+                <div class="form-group">
+                  <label>Nome do Produto *</label>
+                  <input type="text" id="pName" class="form-control" style="width: 100%;" required placeholder="Ex: Camisa Vasco Home 2026" />
+                </div>
+
+                <div class="form-group">
+                  <label>Categoria *</label>
+                  <select id="pCategory" class="form-control" style="width: 100%;" required></select>
+                </div>
+
+                <div class="form-group">
+                  <label>Descrição</label>
+                  <textarea id="pDescription" class="form-control" style="width: 100%;" rows="2" placeholder="Detalhes da peça..."></textarea>
+                </div>
+
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label>Preço (R$) *</label>
+                    <input type="number" step="0.01" min="0.01" id="pPrice" class="form-control" style="width: 100%;" required />
+                  </div>
+                  <div class="form-group">
+                    <label>Promocional (R$)</label>
+                    <input type="number" step="0.01" min="0" id="pPromoPrice" class="form-control" style="width: 100%;" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Estoque Inicial *</label>
+                  <input type="number" min="0" id="pStock" class="form-control" style="width: 100%;" required value="10" />
+                </div>
+
+                <div class="form-group">
+                  <label>Tamanhos Disponíveis *</label>
+                  <div class="sizes-grid" id="pSizesGroup">
+                    <label class="size-chip-check"><input type="checkbox" value="P" checked /> P</label>
+                    <label class="size-chip-check"><input type="checkbox" value="M" checked /> M</label>
+                    <label class="size-chip-check"><input type="checkbox" value="G" checked /> G</label>
+                    <label class="size-chip-check"><input type="checkbox" value="GG" checked /> GG</label>
+                    <label class="size-chip-check"><input type="checkbox" value="XG" /> XG</label>
+                    <label class="size-chip-check"><input type="checkbox" value="Infantil" /> Infantil</label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Fotos do Produto (até 5 imagens)</label>
+                  <input type="file" id="pPhotos" class="form-control" style="width: 100%;" accept="image/jpeg,image/png,image/webp" multiple />
+                </div>
+
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="pAvailable" checked style="accent-color: var(--green);" />
+                    Disponível na loja
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="pCustomizable" checked style="accent-color: var(--green);" />
+                    Permitir personalização (Nome e Número)
+                  </label>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                  <button type="submit" class="btn-primary" style="flex: 1;" id="saveProdSubmitBtn">Salvar Produto</button>
+                  <button type="button" class="btn-secondary" id="cancelProdEditBtn" style="display: none;">Cancelar</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="card-box">
+              <div class="card-box-header">
+                <h3>CATÁLOGO DE PRODUTOS</h3>
+              </div>
+              <div class="table-responsive">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Foto</th>
+                      <th>Produto</th>
+                      <th>Preço</th>
+                      <th>Estoque</th>
+                      <th>Status</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminProductsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             4. ABA CATEGORIAS
+             ============================================================== -->
+        <section id="tab-categorias" class="tab-section">
+          <div class="two-col-layout">
+            <div class="card-box">
+              <div class="card-box-header">
+                <h3>NOVA CATEGORIA</h3>
+              </div>
+              <form id="newCategoryForm">
+                <div class="form-group">
+                  <label>Nome da Categoria *</label>
+                  <input type="text" id="newCategoryName" class="form-control" style="width: 100%;" required placeholder="Ex: Seleções Europeias" />
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;">Adicionar Categoria</button>
+              </form>
+            </div>
+
+            <div class="card-box">
+              <div class="card-box-header">
+                <h3>CATEGORIAS DA LOJA</h3>
+              </div>
+              <div class="table-responsive">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Categoria</th>
+                      <th>Produtos</th>
+                      <th>Status</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="categoriesTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             5. ABA CLIENTES
+             ============================================================== -->
+        <section id="tab-clientes" class="tab-section">
+          <div class="card-box">
+            <div class="card-box-header">
+              <h3>BASE DE CLIENTES</h3>
+              <input type="text" id="customerSearchInput" class="form-control" style="max-width: 300px;" placeholder="Buscar por nome, telefone ou CPF..." />
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Telefone / WhatsApp</th>
+                    <th>CPF</th>
+                    <th>E-mail</th>
+                    <th>Pedidos</th>
+                    <th>Total Comprado</th>
+                  </tr>
+                </thead>
+                <tbody id="customersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             6. ABA ESTOQUE
+             ============================================================== -->
+        <section id="tab-estoque" class="tab-section">
+          <div class="card-box">
+            <div class="card-box-header">
+              <h3>CONTROLE DE ESTOQUE EM TEMPO REAL</h3>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Categoria</th>
+                    <th>Situação</th>
+                    <th>Quantidade Atual</th>
+                    <th>Ajuste Rápido</th>
+                  </tr>
+                </thead>
+                <tbody id="stockTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             7. ABA PAGAMENTOS
+             ============================================================== -->
+        <section id="tab-pagamentos" class="tab-section">
+          <div class="card-box">
+            <div class="card-box-header">
+              <h3>CONTROLE DE PAGAMENTOS E TRANSAÇÕES</h3>
+              <span id="mpStatusBadge" class="badge badge-warning">Verificando Mercado Pago...</span>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pedido</th>
+                    <th>Cliente</th>
+                    <th>Forma de Pagamento</th>
+                    <th>Valor</th>
+                    <th>ID Transação</th>
+                    <th>Status</th>
+                    <th>Data</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             8. ABA RELATÓRIOS
+             ============================================================== -->
+        <section id="tab-relatorios" class="tab-section">
+          <div class="card-box">
+            <div class="card-box-header">
+              <h3>RELATÓRIOS GERENCIAIS DE VENDAS</h3>
+              <button type="button" class="btn-primary" id="exportReportCsvBtn">Exportar Relatório CSV</button>
+            </div>
+
+            <div class="filters-bar">
+              <div class="filter-field">
+                <label>Data Inicial</label>
+                <input type="date" id="reportDateFrom" class="form-control" />
+              </div>
+              <div class="filter-field">
+                <label>Data Final</label>
+                <input type="date" id="reportDateTo" class="form-control" />
+              </div>
+              <button type="button" class="btn-secondary" id="generateReportBtn">Gerar Relatório</button>
+            </div>
+
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div class="kpi-label">Pedidos no Período</div>
+                <div class="kpi-value" id="repTotalOrders">0</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Faturamento Bruto</div>
+                <div class="kpi-value" id="repGrossRevenue">R$ 0,00</div>
+              </div>
+              <div class="kpi-card highlight">
+                <div class="kpi-label">Receita Confirmada (Paga)</div>
+                <div class="kpi-value" id="repPaidRevenue">R$ 0,00</div>
+              </div>
+            </div>
+
+            <div class="two-col-layout" style="grid-template-columns: 1fr 1fr;">
+              <div>
+                <h4 style="color: var(--green); margin-bottom: 10px;">VENDAS POR FORMA DE PAGAMENTO</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Método</th>
+                      <th>Pedidos</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="repPaymentMethodsBody"></tbody>
+                </table>
+              </div>
+
+              <div>
+                <h4 style="color: var(--green); margin-bottom: 10px;">PRODUTOS MAIS VENDIDOS</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Produto</th>
+                      <th>Unidades</th>
+                      <th>Faturamento</th>
+                    </tr>
+                  </thead>
+                  <tbody id="repTopProductsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             9. ABA CONFIGURAÇÕES
+             ============================================================== -->
+        <section id="tab-configuracoes" class="tab-section">
+          <div class="two-col-layout" style="grid-template-columns: 1fr 1fr;">
+            <!-- Configurações da Loja e WhatsApp Cloud API -->
+            <div class="card-box">
+              <div class="card-box-header">
+                <h3>LOJA & WHATSAPP BUSINESS CLOUD API</h3>
+              </div>
+              <form id="settingsForm">
+                <div class="form-group">
+                  <label>Nome da Loja</label>
+                  <input type="text" id="cfgStoreName" class="form-control" style="width: 100%;" />
+                </div>
+                <div class="form-group">
+                  <label>Instagram Oficial</label>
+                  <input type="text" id="cfgStoreInstagram" class="form-control" style="width: 100%;" />
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 16px 0;" />
+
+                <div class="form-group">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="cfgWhatsappEnabled" style="accent-color: var(--green);" />
+                    Ativar envio oficial via WhatsApp Cloud API (Meta)
+                  </label>
+                </div>
+
+                <div class="form-group">
+                  <label>Token da API WhatsApp (Meta for Developers)</label>
+                  <input type="password" id="cfgWhatsappToken" class="form-control" style="width: 100%;" placeholder="Cole o token permanente da Meta (deixe vazio para manter o atual)" />
+                  <small id="cfgTokenStatus" style="color: var(--text-sub); font-size: 0.76rem;"></small>
+                </div>
+
+                <div class="form-group">
+                  <label>Identificação do Número Comercial (Phone Number ID)</label>
+                  <input type="text" id="cfgWhatsappPhoneId" class="form-control" style="width: 100%;" placeholder="Ex: 109876543210987" />
+                </div>
+
+                <div class="form-group">
+                  <label>Número de Destino das Notificações (com DDI 55 + DDD)</label>
+                  <input type="text" id="cfgWhatsappDest" class="form-control" style="width: 100%;" placeholder="Ex: 5521999999999" />
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%;">Salvar Configurações</button>
+              </form>
+            </div>
+
+            <!-- Segurança de Senha e Backups do Banco de Dados -->
+            <div>
+              <div class="card-box">
+                <div class="card-box-header">
+                  <h3>ALTERAR SENHA DO ADMINISTRADOR</h3>
+                </div>
+                <form id="changePasswordForm">
+                  <div class="form-group">
+                    <label>Senha Atual *</label>
+                    <input type="password" id="currentAdminPass" class="form-control" style="width: 100%;" required />
+                  </div>
+                  <div class="form-group">
+                    <label>Nova Senha (mínimo 6 caracteres) *</label>
+                    <input type="password" id="newAdminPass" class="form-control" style="width: 100%;" required minlength="6" />
+                  </div>
+                  <button type="submit" class="btn-secondary" style="width: 100%;">Atualizar Senha</button>
+                </form>
+              </div>
+
+              <div class="card-box">
+                <div class="card-box-header">
+                  <h3>BACKUP DO BANCO DE DADOS</h3>
+                  <button type="button" class="btn-primary" id="createBackupNowBtn">Gerar Backup Agora</button>
+                </div>
+                <p id="dbStatsInfo" style="font-size: 0.84rem; color: var(--text-sub); margin-bottom: 12px;"></p>
+                <div class="table-responsive">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Arquivo de Backup</th>
+                        <th>Tamanho</th>
+                        <th>Download</th>
+                      </tr>
+                    </thead>
+                    <tbody id="backupsTableBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="admin-footer">
+        <span>© 2026 Fanatics Imports (@Fanatics.imports_ofc) — Painel Administrativo</span>
+        <strong>Desenvolvido por Maycon Silva</strong>
+      </footer>
+    </div>
+  </div>
+
+  <!-- MODAL DE DETALHES DO PEDIDO -->
+  <div class="modal-overlay" id="orderDetailModal">
+    <div class="modal-card">
+      <button type="button" class="modal-close-btn" id="closeOrderModalBtn">×</button>
+      <div id="orderDetailContent"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="adminToast"></div>
+
+  <script src="/admin/js/admin.js"></script>
+</body>
+</html>

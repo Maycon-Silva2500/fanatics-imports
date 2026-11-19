@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Administrativo — Fanatics Imports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body style="display: flex; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(circle at top, rgba(0,230,118,0.12), #0a0a0a 55%);">
+  <div class="card-box" style="width: 100%; max-width: 420px; margin-bottom: 0; border-color: var(--border-color);">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div class="logo-badge" style="margin: 0 auto 12px; width: 46px; height: 46px; font-size: 1.35rem;">FI</div>
+      <h1 style="font-size: 1.75rem;">FANATICS <span style="color: var(--green);">ADMIN</span></h1>
+      <p style="color: var(--text-sub); font-size: 0.86rem; margin-top: 4px;">
+        Acesso restrito à administração da loja
+      </p>
+    </div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Usuário</label>
+        <input type="text" id="username" class="form-control" style="width: 100%;" required autocomplete="username" placeholder="admin" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Senha</label>
+        <input type="password" id="password" class="form-control" style="width: 100%;" required autocomplete="current-password" placeholder="••••••••" />
+      </div>
+
+      <div id="loginError" style="display: none; color: var(--danger); font-size: 0.84rem; margin-bottom: 12px; text-align: center; font-weight: 600;"></div>
+
+      <button type="submit" class="btn-primary" style="width: 100%; padding: 12px; font-size: 0.95rem;" id="submitLoginBtn">
+        Entrar no Painel Administrativo
+      </button>
+    </form>
+
+    <div style="margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted);">
+      <a href="/" style="color: var(--green);">← Voltar para a loja</a>
+      <span>Desenvolvido por Maycon Silva</span>
+    </div>
+  </div>
+
+  <script>
+    const TOKEN_KEY = 'fanatics_admin_token';
+
+    // Se já estiver autenticado, redireciona direto ao painel
+    if (localStorage.getItem(TOKEN_KEY)) {
+      fetch('/api/auth/verify', {
+        headers: { Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}` }
+      })
+        .then((res) => {
+          if (res.ok) window.location.href = '/admin/dashboard.html';
+        })
+        .catch(() => {});
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorBox = document.getElementById('loginError');
+      const btn = document.getElementById('submitLoginBtn');
+      errorBox.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Autenticando...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value.trim(),
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          localStorage.setItem(TOKEN_KEY, data.token);
+          window.location.href = '/admin/dashboard.html';
+        } else {
+          errorBox.textContent = data.error || 'Usuário ou senha inválidos.';
+          errorBox.style.display = 'block';
+        }
+      } catch {
+        errorBox.textContent = 'Não foi possível conectar ao servidor.';
+        errorBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Entrar no Painel Administrativo';
+      }
+    });
+  </script>
+</body>
+</html>
