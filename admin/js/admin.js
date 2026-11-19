@@ -1,5 +1,5 @@
 /**
- * FANATICS IMPORTS — CONTROLADOR DO PAINEL ADMINISTRATIVO
+ * FANATICS IMPORTS — CONTROLADOR DO PAINEL ADMINISTRATIVO (DESKTOP & MOBILE)
  * Desenvolvido por Maycon Silva
  */
 
@@ -7,6 +7,7 @@ const TOKEN_KEY = 'fanatics_admin_token';
 let cachedOrders = [];
 let cachedProducts = [];
 let lastReportData = null;
+let lastDashboardData = null;
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -38,6 +39,16 @@ function showAdminToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 3200);
 }
 
+function closeMobileSidebar() {
+  document.getElementById('adminSidebar')?.classList.remove('open');
+  document.getElementById('sidebarBackdrop')?.classList.remove('open');
+}
+
+function openMobileSidebar() {
+  document.getElementById('adminSidebar')?.classList.add('open');
+  document.getElementById('sidebarBackdrop')?.classList.add('open');
+}
+
 async function apiFetch(url, options = {}) {
   const res = await fetch(url, {
     ...options,
@@ -52,7 +63,7 @@ async function apiFetch(url, options = {}) {
 }
 
 // ============================================================================
-// GRÁFICOS NATIVOS EM CANVAS (SEM DEPENDÊNCIAS EXTERNAS)
+// GRÁFICOS NATIVOS EM CANVAS (ADAPTADOS PARA DESKTOP E CELULAR)
 // ============================================================================
 function drawBarChart(canvasId, labels, values, isCurrency = true) {
   const canvas = document.getElementById(canvasId);
@@ -61,28 +72,31 @@ function drawBarChart(canvasId, labels, values, isCurrency = true) {
 
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.parentElement.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return;
+
   canvas.width = rect.width * dpr;
   canvas.height = rect.height * dpr;
   ctx.scale(dpr, dpr);
 
   const width = rect.width;
   const height = rect.height;
+  const isCompact = width < 420;
+
   ctx.clearRect(0, 0, width, height);
 
-  const padLeft = 58;
-  const padRight = 20;
-  const padTop = 24;
-  const padBottom = 38;
+  const padLeft = isCompact ? 46 : 58;
+  const padRight = isCompact ? 10 : 20;
+  const padTop = 20;
+  const padBottom = 36;
   const chartW = width - padLeft - padRight;
   const chartH = height - padTop - padBottom;
 
   const maxVal = Math.max(...values, 10);
 
-  // Linhas de grade horizontais
   ctx.strokeStyle = '#262626';
   ctx.lineWidth = 1;
   ctx.fillStyle = '#888888';
-  ctx.font = '11px Inter, sans-serif';
+  ctx.font = isCompact ? '10px Inter, sans-serif' : '11px Inter, sans-serif';
   ctx.textAlign = 'right';
 
   for (let i = 0; i <= 4; i++) {
@@ -94,13 +108,13 @@ function drawBarChart(canvasId, labels, values, isCurrency = true) {
     ctx.stroke();
 
     const labelStr = isCurrency ? `R$${Math.round(val)}` : `${Math.round(val)}`;
-    ctx.fillText(labelStr, padLeft - 8, y + 4);
+    ctx.fillText(labelStr, padLeft - 6, y + 4);
   }
 
   if (labels.length === 0) return;
 
   const slotW = chartW / labels.length;
-  const barW = Math.min(38, slotW * 0.55);
+  const barW = Math.min(isCompact ? 24 : 38, slotW * 0.55);
 
   labels.forEach((lbl, idx) => {
     const val = values[idx] || 0;
@@ -108,18 +122,36 @@ function drawBarChart(canvasId, labels, values, isCurrency = true) {
     const x = padLeft + slotW * idx + (slotW - barW) / 2;
     const y = padTop + chartH - barH;
 
-    // Barra verde Fanatics Imports
     ctx.fillStyle = '#00E676';
     ctx.beginPath();
     ctx.roundRect ? ctx.roundRect(x, y, barW, barH, [4, 4, 0, 0]) : ctx.rect(x, y, barW, barH);
     ctx.fill();
 
-    // Rótulo no eixo X
     ctx.fillStyle = '#B0B0B0';
     ctx.textAlign = 'center';
-    const shortLbl = lbl.length > 12 ? lbl.slice(0, 11) + '…' : lbl;
-    ctx.fillText(shortLbl, x + barW / 2, height - 14);
+    const maxChars = isCompact ? 7 : 12;
+    const shortLbl = lbl.length > maxChars ? lbl.slice(0, maxChars - 1) + '…' : lbl;
+    ctx.fillText(shortLbl, x + barW / 2, height - 12);
   });
+}
+
+function renderDashboardCharts() {
+  if (!lastDashboardData) return;
+  const days = lastDashboardData.charts.last7Days || [];
+  drawBarChart(
+    'dailySalesChart',
+    days.map((d) => d.label),
+    days.map((d) => d.revenue),
+    true
+  );
+
+  const cats = lastDashboardData.charts.categorySales || [];
+  drawBarChart(
+    'categorySalesChart',
+    cats.map((c) => c.category),
+    cats.map((c) => c.revenue),
+    true
+  );
 }
 
 // ============================================================================
@@ -129,6 +161,7 @@ async function loadDashboard() {
   const res = await apiFetch('/api/admin/dashboard');
   if (!res.ok) return;
   const data = await res.json();
+  lastDashboardData = data;
   const m = data.metrics;
 
   document.getElementById('kpiTotalOrders').textContent = m.totalOrders;
@@ -140,21 +173,7 @@ async function loadDashboard() {
   document.getElementById('kpiApprovedRevenue').textContent = formatBRL(m.approvedRevenue);
   document.getElementById('kpiPendingRevenue').textContent = formatBRL(m.pendingRevenue);
 
-  const days = data.charts.last7Days || [];
-  drawBarChart(
-    'dailySalesChart',
-    days.map((d) => d.label),
-    days.map((d) => d.revenue),
-    true
-  );
-
-  const cats = data.charts.categorySales || [];
-  drawBarChart(
-    'categorySalesChart',
-    cats.map((c) => c.category),
-    cats.map((c) => c.revenue),
-    true
-  );
+  renderDashboardCharts();
 }
 
 // ============================================================================
@@ -214,7 +233,7 @@ async function loadOrders() {
             <span class="badge ${getStatusBadgeClass(o.paymentStatus)}">${o.paymentStatus}</span>
           </td>
           <td>
-            <select class="form-control" style="padding:6px 8px; font-size:0.8rem;" onchange="updateOrderStatus(${o.id}, this.value)">
+            <select class="form-control" style="padding:6px 8px; font-size:0.82rem; min-height:38px;" onchange="updateOrderStatus(${o.id}, this.value)">
               ${[
                 'Pedido recebido',
                 'Aguardando pagamento',
@@ -230,7 +249,7 @@ async function loadOrders() {
           </td>
           <td style="font-size:0.78rem; color:var(--text-sub);">${formatDateTime(o.createdAt)}</td>
           <td>
-            <button type="button" class="btn-secondary" style="padding:6px 10px; font-size:0.78rem;" onclick="openOrderDetail(${o.id})">
+            <button type="button" class="btn-secondary" style="padding:6px 10px; min-height:38px; font-size:0.78rem;" onclick="openOrderDetail(${o.id})">
               Detalhes
             </button>
           </td>
@@ -263,7 +282,7 @@ function openOrderDetail(orderId) {
   const itemsHtml = o.items
     .map(
       (i) => `
-      <div style="padding: 8px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between;">
+      <div style="padding: 8px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; gap: 10px;">
         <div>
           <strong>${i.quantity}x ${i.name}</strong> — Tamanho: <strong>${i.size}</strong>
           ${i.customized ? `<div style="color:var(--green); font-size:0.82rem;">Personalização: ${i.customName} #${i.customNumber}</div>` : ''}
@@ -297,8 +316,8 @@ function openOrderDetail(orderId) {
       </div>
     </div>
 
-    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:var(--bg-dark); padding:12px; border-radius:8px;">
-      <div style="flex:1;">
+    <div style="display:flex; gap:12px; align-items:end; flex-wrap:wrap; background:var(--bg-dark); padding:12px; border-radius:8px;">
+      <div style="flex:1; min-width: 200px;">
         <label style="font-size:0.76rem; color:var(--text-sub); display:block; margin-bottom:4px;">Situação do Pagamento (${o.paymentMethod}):</label>
         <select id="modalPaymentStatusSelect" class="form-control" style="width:100%;">
           ${['Aguardando pagamento', 'Pagamento aprovado', 'Recusado', 'Estornado']
@@ -306,7 +325,7 @@ function openOrderDetail(orderId) {
             .join('')}
         </select>
       </div>
-      <button type="button" class="btn-primary" style="margin-top:18px;" onclick="saveModalPaymentStatus(${o.id})">
+      <button type="button" class="btn-primary" style="width: 100%;" onclick="saveModalPaymentStatus(${o.id})">
         Salvar Pagamento
       </button>
     </div>
@@ -348,7 +367,6 @@ async function loadProductsAndStock() {
   if (!prodRes.ok) return;
   cachedProducts = await prodRes.json();
 
-  // Tabela Aba Produtos
   const prodBody = document.getElementById('adminProductsBody');
   prodBody.innerHTML = cachedProducts
     .map((p) => {
@@ -372,7 +390,7 @@ async function loadProductsAndStock() {
           </td>
           <td>
             <div style="display:flex; gap:6px;">
-              <button type="button" class="btn-secondary" style="padding:5px 9px; font-size:0.76rem;" onclick="editProduct(${p.id})">Editar</button>
+              <button type="button" class="btn-secondary" style="padding:5px 10px; min-height:36px; font-size:0.78rem;" onclick="editProduct(${p.id})">Editar</button>
               <button type="button" class="btn-danger-sm" onclick="removeProduct(${p.id}, '${p.name.replace(/'/g, "\\'")}')">Excluir</button>
             </div>
           </td>
@@ -381,7 +399,6 @@ async function loadProductsAndStock() {
     })
     .join('');
 
-  // Tabela Aba Estoque
   const stockBody = document.getElementById('stockTableBody');
   stockBody.innerHTML = cachedProducts
     .map((p) => {
@@ -395,10 +412,10 @@ async function loadProductsAndStock() {
           <td>${p.category}</td>
           <td>${badgeHtml}</td>
           <td>
-            <input type="number" min="0" id="stockInput_${p.id}" value="${p.stock}" class="form-control" style="width:90px; padding:6px 10px;" />
+            <input type="number" min="0" id="stockInput_${p.id}" value="${p.stock}" class="form-control" style="width:90px; min-height:38px; padding:6px 10px;" />
           </td>
           <td>
-            <button type="button" class="btn-primary" style="padding:6px 12px; font-size:0.78rem;" onclick="saveQuickStock(${p.id})">
+            <button type="button" class="btn-primary" style="padding:6px 12px; min-height:38px; font-size:0.78rem;" onclick="saveQuickStock(${p.id})">
               Atualizar
             </button>
           </td>
@@ -428,6 +445,8 @@ function editProduct(id) {
   document.querySelectorAll('#pSizesGroup input[type="checkbox"]').forEach((cb) => {
     cb.checked = p.sizes.includes(cb.value);
   });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function resetProductForm() {
@@ -490,7 +509,7 @@ async function loadAdminCategories() {
         </td>
         <td>
           <div style="display:flex; gap:6px;">
-            <button type="button" class="btn-secondary" style="padding:5px 9px; font-size:0.76rem;" onclick="toggleCategory(${c.id}, ${c.active ? 0 : 1})">
+            <button type="button" class="btn-secondary" style="padding:5px 10px; min-height:36px; font-size:0.78rem;" onclick="toggleCategory(${c.id}, ${c.active ? 0 : 1})">
               ${c.active ? 'Desativar' : 'Ativar'}
             </button>
             <button type="button" class="btn-danger-sm" onclick="deleteCategory(${c.id})">Excluir</button>
@@ -706,7 +725,7 @@ async function loadSettingsAndBackups() {
           <td style="font-size:0.8rem;">${b.filename}</td>
           <td>${b.sizeKB} KB</td>
           <td>
-            <button type="button" class="btn-secondary" style="padding:4px 10px; font-size:0.76rem;" onclick="downloadBackup('${b.filename}')">
+            <button type="button" class="btn-secondary" style="padding:4px 10px; min-height:34px; font-size:0.76rem;" onclick="downloadBackup('${b.filename}')">
               Baixar
             </button>
           </td>
@@ -755,7 +774,7 @@ function switchTab(tabName) {
     sec.classList.toggle('active', sec.id === `tab-${tabName}`);
   });
   document.getElementById('currentPageTitle').textContent = TAB_TITLES[tabName] || 'PAINEL';
-  document.getElementById('adminSidebar').classList.remove('open');
+  closeMobileSidebar();
 
   if (tabName === 'dashboard') loadDashboard();
   if (tabName === 'pedidos') loadOrders();
@@ -773,36 +792,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Verifica validade da sessão
   await apiFetch('/api/auth/verify');
-
-  // Carrega dados iniciais
   await loadDashboard();
 
-  // Navegação sidebar
   document.querySelectorAll('.nav-item').forEach((btn) => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  // Menu mobile
+  // Menu mobile e toque no fundo escuro para fechar
   document.getElementById('toggleSidebarBtn').addEventListener('click', () => {
-    document.getElementById('adminSidebar').classList.toggle('open');
+    const sidebar = document.getElementById('adminSidebar');
+    if (sidebar.classList.contains('open')) {
+      closeMobileSidebar();
+    } else {
+      openMobileSidebar();
+    }
+  });
+  document.getElementById('sidebarBackdrop')?.addEventListener('click', closeMobileSidebar);
+
+  // Redesenha gráficos ao girar o celular ou redimensionar janela
+  window.addEventListener('resize', () => {
+    if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
+      renderDashboardCharts();
+    }
   });
 
-  // Logout
   document.getElementById('logoutBtn').addEventListener('click', () => {
     localStorage.removeItem(TOKEN_KEY);
     window.location.href = '/admin/login.html';
   });
 
-  // Filtros de pedidos
   document.getElementById('applyOrderFiltersBtn').addEventListener('click', loadOrders);
   document.getElementById('refreshOrdersBtn').addEventListener('click', loadOrders);
   document.getElementById('closeOrderModalBtn').addEventListener('click', () => {
     document.getElementById('orderDetailModal').classList.remove('open');
   });
 
-  // Formulário de Produto
   document.getElementById('cancelProdEditBtn').addEventListener('click', resetProductForm);
   document.getElementById('adminProductForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -843,7 +868,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Nova Categoria
   document.getElementById('newCategoryForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('newCategoryName').value.trim();
@@ -862,16 +886,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Pesquisa de clientes
   document.getElementById('customerSearchInput').addEventListener('input', (e) => {
     loadCustomers(e.target.value);
   });
 
-  // Relatórios
   document.getElementById('generateReportBtn').addEventListener('click', loadReports);
   document.getElementById('exportReportCsvBtn').addEventListener('click', exportReportToCSV);
 
-  // Configurações
   document.getElementById('settingsForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const payload = {
@@ -897,7 +918,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Trocar Senha Admin
   document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const currentPassword = document.getElementById('currentAdminPass').value;
@@ -916,7 +936,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Gerar Backup Manual
   document.getElementById('createBackupNowBtn').addEventListener('click', async () => {
     const res = await apiFetch('/api/admin/database/backup', { method: 'POST' });
     const data = await res.json();
